@@ -24,7 +24,11 @@ LinearRegression::LinearRegression(const double *_x, const double *_y, const dou
 	linearGraph->SetMarkerStyle(MARKERSTYLE);
 	// Fit a linear function to the graph with the minuit fitter, so the errors in x are taken into account.
 	linearGraph->Fit("pol1", "F");
+<<<<<<< HEAD
 	linearGraph->Draw("AP");
+=======
+	linearGraph->Draw("APL");
+>>>>>>> e521bf241896272a5294c62adc2608b747803432
 	linearFunction = linearGraph->GetFunction("pol1");
 	linearFunction->SetLineWidth(2);
 	linearFunction->SetLineColor(kBlue);
