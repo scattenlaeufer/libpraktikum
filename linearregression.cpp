@@ -1,6 +1,8 @@
 #include "linearregression.h"
 
 LinearRegression::LinearRegression(const double *_x, const double *_y, const double *_xErrors, const double *_yErrors, const unsigned int _length) : x(_x), y(_y), xErrors(_xErrors), yErrors(_yErrors), length(_length) {
+	gROOT->SetStyle("Plain");
+	
 	if (x == NULL || y == NULL) {
 		std::cerr << "Error: x and y must not be NULL" << std::endl;
 		return;

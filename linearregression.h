@@ -1,6 +1,7 @@
 #include "options.h"
 #include "utils.h"
 
+#include <TROOT.h>
 #include <iostream>
 #include <stdio.h>
 #include <TStyle.h>
