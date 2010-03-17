@@ -152,10 +152,10 @@ void LinearRegression::setUnits(const string &n, const string &m) {
 	linearStatistics = new TPaveText(0.7, 0.7, 1, 1, "NDC" );
 	char buf[64];
 
-	snprintf(buf, sizeof(buf), "m = %s %s",
+	snprintf(buf, sizeof(buf), "m = (%s) %s",
 			utils::printNumber(linearFunction->GetParameter(1), linearFunction->GetParError(1)).c_str(), m.c_str());
 	linearStatistics->AddText(buf);
-	snprintf(buf, sizeof(buf), "n = %s %s",
+	snprintf(buf, sizeof(buf), "n = (%s) %s",
 			utils::printNumber(linearFunction->GetParameter(0), linearFunction->GetParError(0)).c_str(), n.c_str());
 	linearStatistics->AddText(buf);
 	if (hasErrors) {
