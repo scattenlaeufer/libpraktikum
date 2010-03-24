@@ -87,6 +87,8 @@ class LinearRegression {
 		 */
 		void setUnits(const string &n, const string &m);
 
+		void pullGausFit();
+
 
 
 	protected:

@@ -187,3 +187,22 @@ TPaveText *LinearRegression::drawStats() const {
 	paveText->Draw();
 	return paveText;
 }
+
+
+void LinearRegression::pullGausFit(){
+	pullsPad->cd();
+	pullsHisto -> Fit("gaus");
+	pullsHisto -> GetFunction("gaus") -> SetLineColor(kBlue);
+	double mean = pullsHisto -> GetFunction("gaus") -> GetParameter(1);
+	double mean_error = pullsHisto -> GetFunction("gaus") -> GetParError(1);
+	double sigma = pullsHisto -> GetFunction("gaus") -> GetParameter(2);
+	double sigma_error = pullsHisto -> GetFunction("gaus") -> GetParError(2);
+	TPaveText *gausStats = new TPaveText(0.7, 0.7, 1, 1, "NDC" );
+	char buf[64];
+
+	snprintf(buf, sizeof(buf), "#mu = %s", utils::printNumber(mean,mean_error).c_str());
+	gausStats -> AddText(buf);
+	snprintf(buf, sizeof(buf), "#sigma = %s", utils::printNumber(sigma,sigma_error).c_str());
+	gausStats -> AddText(buf);
+	gausStats -> Draw();
+}
