@@ -87,6 +87,9 @@ class LinearRegression {
 		 */
 		void setUnits(const string &n, const string &m);
 
+		/** Performs a gaus-fit to tha data in
+		 *  the pull histogram
+		 */
 		void pullGausFit();
 
 

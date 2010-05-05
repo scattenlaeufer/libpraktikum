@@ -17,6 +17,8 @@ void Oscillation::init() {
 		xFreq = NULL;
 		yFreq = NULL;
 		iterations = 10000;
+		x_low = 800;
+		x_high = 1600;
 }
 
 void Oscillation::draw() {
@@ -24,6 +26,13 @@ void Oscillation::draw() {
 	frequencyVisible = true;
 	drawOscillation();
 	drawFrequency();
+}
+
+void Oscillation::draw(double x_1, double x_2){
+
+	x_low = x_1;
+	x_high = x_2;
+	draw();
 }
 
 void Oscillation::drawOscillation() {
@@ -43,10 +52,11 @@ void Oscillation::drawOscillation() {
 		oscillationGraph = new TGraph(length, x, y);
 	oscillationGraph->SetName("oscillationGraph");
 	oscillationGraph->SetTitle("Oscillation");
+	oscillationGraph->Draw("APC");
 	if (doFit) {
 		//TODO do fit to a damped harmonic oscillator here
+		fit();
 	}
-	oscillationGraph->Draw("APC");
 }
 
 void Oscillation::drawFrequency() {
@@ -64,12 +74,14 @@ void Oscillation::drawFrequency() {
 	frequencyGraph->SetName("frequencyGraph");
 	frequencyGraph->SetTitle("Frequency");
 	frequencyGraph->Draw("APL");
+	
+	printFreqData();	
 }
 
 void Oscillation::runFFT() {
 	xFreq = new double[iterations];
 	yFreq = new double[iterations];
-	fourier(length, x, y, iterations, 800, 1600, xFreq, yFreq, false);
+	fourier(length, x, y, iterations, x_low, x_high, xFreq, yFreq, false);
 	/*
 	TVirtualFFT *fft = TVirtualFFT::FFT(1, (Int_t*)(&length), "R2C M K");
 	if (!fft) return;
@@ -148,4 +160,180 @@ int Oscillation::fourier(int n_datasets, const double* data_t, const double* dat
 			}
 
 			return 0;
-		};
+		}
+
+double Oscillation::peakfinderSchwerpunkt(double * x, double * y, int n_datasets, double &sigm_peak, int start, double val){
+	int i0=start; //index or left border of relevant section of peak
+	int i1=n_datasets; //index of right border of relevant section of peak
+	
+	cout << i0 << " " << i1 <<endl;
+	
+	//if left border is greater than the right one, use the whole array of datapoints
+	if(i0>=n_datasets) i0=0;
+	
+	double x1; //x-values of border of relevant section of peak
+	
+	double ymax=y[i0]; //maximum of peak
+	
+	
+	//Find maximum of peak
+	for(int i=i0; i<n_datasets; i++){
+		if(y[i]>ymax){
+			ymax=y[i];
+		}
+		
+	}
+	
+	//find left border of relevant section of peak
+	//all values have to be greate than val*ymax
+	for(int i=i0; i<n_datasets; i++){
+		if(y[i]>ymax*val){ 
+			i0=i;
+			break;
+		}
+	}
+	
+	//find right border of relevant section of peak
+	//all values have to be greate than val*ymax
+	for(int i=i0+1; i<n_datasets; i++){
+		if(y[i]<ymax*val){
+			x1=x[i];
+			i1=i;
+			break;
+		}
+		x1=x[n_datasets];
+	}
+	
+	
+	double sum_y=0;
+	double sum_xy=0;
+	double sum_xy2=0;
+	
+	//calculate some values for the relevant section of the peak
+	for(int i=i0; i<i1; i++){
+		sum_y+=y[i];
+		sum_xy+=x[i]*y[i];
+		sum_xy2+=x[i]*x[i]*y[i];
+	}
+	
+	
+	//do some magic; Not fully understood
+	double x_peak=sum_xy/sum_y;
+	sigm_peak=sqrt(fabs(sum_xy2/sum_y - pow(x_peak,2)));
+	
+	return x_peak;
+}
+
+void Oscillation::printFreqData(){
+
+	double peak_error;
+	double peak = peakfinderSchwerpunkt(xFreq,yFreq,iterations,peak_error,0,1./sqrt(2.));
+	printf("peak: %f, peakerror: %f\n",peak,peak_error);
+	freqStat = new TPaveText(0.65, 0.7, 0.85, 0.8, "NDC" );
+	char buf[64];
+	snprintf(buf, sizeof(buf), "f = (%s)Hz",
+			utils::printNumber(peak, peak_error).c_str());
+	freqStat -> AddText(buf);
+	freqStat -> Draw();
+}
+
+void Oscillation::fit(){
+
+	printf("start fitting\n");
+
+	// number of maximas
+	int n_max = 0;				
+
+	// Arrays needed by TSpectrum
+	Float_t *dest = new Float_t[length];
+	Float_t *source = new Float_t[length];
+
+	// "converting" double to Float_t, because TSpectrum cannot deal with double
+	for (int i = 0; i < length; ++i){
+		source[i] = y[i];
+	}
+
+	TSpectrum *s = new TSpectrum();
+
+	n_max = s -> SearchHighRes(source, dest, length, 5,5, false, 2, false, 3);
+
+	// get the position in the array of the maxima
+	Float_t *xpos = s -> GetPositionX();
+
+	// get the actual x-/y-values of the maxima
+	double x_max[n_max];
+	double y_max[n_max];
+	double x_max_error[n_max];
+	double y_max_error[n_max];
+
+	if (hasErrors){
+		for (int i = 0; i < n_max; ++i){
+			x_max[i] = x[(int) xpos[i]];
+			y_max[i] = y[(int) xpos[i]];
+			x_max_error[i] = xErrors[(int) xpos[i]];
+			y_max_error[i] = yErrors[(int) xpos[i]];
+		}
+
+	}
+	else{
+		for (int i = 0; i < n_max; ++i){
+			x_max[i] = x[(int) xpos[i]];
+			y_max[i] = y[(int) xpos[i]];
+		}
+	}
+
+	// printing values, just for debugging
+/*	for (int i = 0; i < n_max; ++i){
+		printf("%d:   %f  ->   %f - %f\n",i,xpos[i], x_max[i],y_max[i]);
+	}
+
+	printf("number of maxima: %d\n",n_max);
+*/
+	TGraph *g_ein;
+	if (hasErrors){
+		g_ein = new TGraphErrors(n_max,x_max,y_max,x_max_error,y_max_error);
+	}
+	else{
+		g_ein = new TGraph(n_max,x_max,y_max);
+	}
+
+	// fitting exponetial function to maxima
+	expFunction = new TF1("envalope","[0]*exp(-[1]*x)",x[0],x[length-1]);
+	expFunction -> SetLineColor(4);
+
+	g_ein -> Fit("envalope");
+
+	oscillationPad -> cd();
+	g_ein -> Draw("*SAME");
+	expFunction -> Draw("SAME");
+	printf("%d: %f\n",length,x[length-1]);
+
+	// print fitting parameters
+	double gamma = expFunction -> GetParameter(1);
+	double gamma_error = expFunction -> GetParError(1);
+
+	if (hasErrors){
+		expStatistics = new TPaveText(0.65, 0.6, 0.85, 0.8, "NDC" );
+	}
+	else{
+		expStatistics = new TPaveText(0.65, 0.65, 0.85, 0.85, "NDC" );
+	}
+	char buf[64];
+	snprintf(buf, sizeof(buf), "#gamma = (%s)#frac{1}{s}",
+			utils::printNumber(gamma, gamma_error).c_str());
+	expStatistics -> AddText(buf);
+	if (hasErrors){
+		snprintf(buf, sizeof(buf), "#frac{#chi^{2}}{ndf} = %s",
+				utils::toString(expFunction -> GetChisquare() / expFunction ->GetNDF(), 2).c_str());
+		expStatistics -> AddText(buf);
+	}
+	expStatistics -> Draw();
+//	printf("fitting done\n");
+
+	delete g_ein;
+	delete s;
+	delete [] dest;
+	delete [] source;
+}
+
+

@@ -13,6 +13,8 @@
 #include <TPaveText.h>
 #include <TList.h>
 #include <TVirtualFFT.h>
+#include <TSpectrum.h>
+#include <TMath.h>
 
 
 class Oscillation : DataAnalysis {
@@ -21,18 +23,22 @@ class Oscillation : DataAnalysis {
 		inline Oscillation(const double *_x, const double *_y, const double *_xErrors, const double *_yErrors, const unsigned int _length)
 			: DataAnalysis(_x, _y, _xErrors, _yErrors, _length)
 		{
+			length = _length;
 			init();
 		}
 
 		inline Oscillation(const double *_x, const double *_y, const unsigned int _length)
 			: DataAnalysis(_x, _y, _length)
 		{
+			length = _length;
 			init();
 		}
 
 		void runFFT();
 
 		void draw();
+
+		void draw(double x_1,double x_2);
 
 		void drawOscillation();
 
@@ -76,6 +82,7 @@ class Oscillation : DataAnalysis {
 		TF1 *expFunction;
 		TGraph *oscillationGraph;
 		TPaveText *expStatistics;
+		TPaveText *freqStat;
 		TGraph *frequencyGraph;
 
 		bool oscillationVisible;
@@ -87,6 +94,11 @@ class Oscillation : DataAnalysis {
 		/// the y values of the frequency spectrum, i.e. the amplitude
 		double *yFreq;
 		unsigned int iterations;
+		/// borders for fourier
+		double x_low;
+		double x_high;
+
+		int length;
 
 	private:
 		// This is called by the constructors
@@ -110,6 +122,27 @@ class Oscillation : DataAnalysis {
 		 * \return allways 0
 		 */
 		int fourier(int n_datasets, const double* data_t, const double* data_a, int n_f, double f_min, double f_max, double* f_out, double* amp_out, bool progress);
+
+		/**
+		 * \brief Peakfinder with integrated calculation of RMS of peak
+		 * 
+		 * Algorithm inspired by MAPLE Library for Anfängerpraktikum \n
+		 * Only finds one single Peak
+		 * 
+		 * \param[in] x Array with frequency belonging to the amplitude data (generated as f_out by fourier, eg.)
+		 * \param[in] y Array with the amplitude data (generated as amp_out by fourier, eg.)
+		 * \param[in] n_datasets Number of datapoints in amp and f (if setting lower than real size of the array, the rest of the points are ignored)
+		 * \param[out] sigm_peak RMS of the found peak
+		 * \param[in] start (optional) datapoint to start with (ignorred if greater than n_freqs) (default: 0)
+		 * \param[in] val (optional) only datapoints greater than ymax*val in the peak are used (default: 1/sqrt(2))
+		 * 
+		 * \returns frequency of the found peak (as double, NOT as index of a data point)
+		*/
+		double peakfinderSchwerpunkt(double * x, double * y, int n_datasets, double &sigm_peak, int start, double val);
+
+		void printFreqData();
+
+		void fit();
 };
 
 
