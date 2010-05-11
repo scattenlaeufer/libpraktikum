@@ -35,6 +35,13 @@ void Oscillation::draw(double x_1, double x_2){
 	draw();
 }
 
+void Oscillation::drawOs(){
+
+	oscillationVisible = true;
+	frequencyVisible = false;
+	drawOscillation();
+}
+
 void Oscillation::drawOscillation() {
 	canvas->cd();
 	if (frequencyVisible)
@@ -282,55 +289,150 @@ void Oscillation::fit(){
 		}
 	}
 
-	// printing values, just for debugging
-/*	for (int i = 0; i < n_max; ++i){
-		printf("%d:   %f  ->   %f - %f\n",i,xpos[i], x_max[i],y_max[i]);
+	// get the minima, in principle the same as getting the maxima only with inverted y-array
+	
+	for (int i = 0; i < length; ++i){
+		source[i] = -1 * y[i];
 	}
 
-	printf("number of maxima: %d\n",n_max);
-*/
-	TGraph *g_ein;
+	int n_min = s -> SearchHighRes(source, dest, length, 5,5, false, 2, false, 3);
+	
+//	delete [] xpos;
+	xpos = s -> GetPositionX();
+	if (n_min);
+
+	double x_min[n_min];
+	double y_min[n_min];
+	double x_min_error[n_min];
+	double y_min_error[n_min];
+
 	if (hasErrors){
-		g_ein = new TGraphErrors(n_max,x_max,y_max,x_max_error,y_max_error);
+		for (int i = 0; i < n_min; ++i){
+			x_min[i] = x[(int) xpos[i]];
+			y_min[i] = y[(int) xpos[i]];
+			x_min_error[i] = xErrors[(int) xpos[i]];
+			y_min_error[i] = yErrors[(int) xpos[i]];
+		}
+
 	}
 	else{
-		g_ein = new TGraph(n_max,x_max,y_max);
+		for (int i = 0; i < n_min; ++i){
+			x_min[i] = x[(int) xpos[i]];
+			y_min[i] = y[(int) xpos[i]];
+		}
+	}
+
+	// combine maxima and minima
+	
+	int n = n_max + n_min;
+	double x_ext[n];
+	double y_ext[n];
+	double x_ext_error[n];
+	double y_ext_error[n];
+
+	if (hasErrors){
+		for (int i = 0; i < n_max; ++i){
+			x_ext[i] = x_max[i];
+			y_ext[i] = y_max[i];
+			x_ext_error[i] = y_max_error[i];
+			y_ext_error[i] = y_max_error[i];
+		}
+		for (int i = 0; i < n_min; ++i){
+			x_ext[n_max+i] = x_min[i];
+			y_ext[n_max+i] = y_min[i];
+			x_ext_error[n_max+i] = y_min_error[i];
+			y_ext_error[n_max+i] = y_min_error[i];
+		}
+	}
+	else{
+		for (int i = 0; i < n_max; ++i){
+			x_ext[i] = x_max[i];
+			y_ext[i] = y_max[i];
+		}
+		for (int i = 0; i < n_min; ++i){
+			x_ext[n_max+i] = x_min[i];
+			y_ext[n_max+i] = -1 * y_min[i];
+		}
+	}
+
+
+	// printing values, just for debugging
+	for (int i = 0; i < n; ++i){
+		printf("%d:   %f  ->   %f - %f\n",i,xpos[i], x_ext[i],y_ext[i]);
+	}
+
+	printf("number of minima: %d\n",n_max);
+
+	TGraph *g_max;
+	TGraph *g_min;
+	if (hasErrors){
+		g_max = new TGraphErrors(n_max,x_max,y_max,x_max_error,y_max_error);
+		g_min = new TGraphErrors(n_min,x_min,y_min,x_min_error,y_min_error);
+	}
+	else{
+		g_max = new TGraph(n_max,x_max,y_max);
+		g_min = new TGraph(n_min,x_min,y_min);
 	}
 
 	// fitting exponetial function to maxima
-	expFunction = new TF1("envalope","[0]*exp(-[1]*x)",x[0],x[length-1]);
+	expFunction = new TF1("envalope","[0]*exp(-[1]*x) + [2]",x[0],x[length-1]);
 	expFunction -> SetLineColor(4);
 
-	g_ein -> Fit("envalope");
+	TF1 *expFunction_min = new TF1("envalope_min","[0]*exp(-[1]*x) + [2]",x[0],x[length-1]);
+	expFunction_min -> SetLineColor(4);
+
+	g_max -> Fit("envalope");
+	g_min -> Fit("envalope_min");
 
 	oscillationPad -> cd();
-	g_ein -> Draw("*SAME");
+//	g_ein -> Draw("*SAME");
 	expFunction -> Draw("SAME");
+	expFunction_min -> Draw("SAME");
 	printf("%d: %f\n",length,x[length-1]);
 
 	// print fitting parameters
-	double gamma = expFunction -> GetParameter(1);
-	double gamma_error = expFunction -> GetParError(1);
+	double gamma_max = expFunction -> GetParameter(1);
+	double gamma_min = expFunction_min -> GetParameter(1);
+	double gamma_max_error = expFunction -> GetParError(1);
+	double gamma_min_error = expFunction_min -> GetParError(1);
 
 	if (hasErrors){
 		expStatistics = new TPaveText(0.65, 0.6, 0.85, 0.8, "NDC" );
 	}
 	else{
-		expStatistics = new TPaveText(0.65, 0.65, 0.85, 0.85, "NDC" );
+		expStatistics = new TPaveText(0.65, 0.7, 0.85, 0.8, "NDC" );
 	}
 	char buf[64];
-	snprintf(buf, sizeof(buf), "#gamma = (%s)#frac{1}{s}",
-			utils::printNumber(gamma, gamma_error).c_str());
+	snprintf(buf, sizeof(buf), "#gamma_{1} = (%s)#frac{1}{s}",
+			utils::printNumber(gamma_max, gamma_max_error).c_str());
 	expStatistics -> AddText(buf);
 	if (hasErrors){
-		snprintf(buf, sizeof(buf), "#frac{#chi^{2}}{ndf} = %s",
+		snprintf(buf, sizeof(buf), "#frac{#chi^{2}_{1}}{ndf_{1}} = %s",
 				utils::toString(expFunction -> GetChisquare() / expFunction ->GetNDF(), 2).c_str());
 		expStatistics -> AddText(buf);
 	}
-	expStatistics -> Draw();
-//	printf("fitting done\n");
+	snprintf(buf, sizeof(buf), "#gamma_{2} = (%s)#frac{1}{s}",
+			utils::printNumber(gamma_min,gamma_min_error).c_str());
+	expStatistics -> AddText(buf);
+	if (hasErrors){
+		snprintf(buf, sizeof(buf), "#frac{#chi^{2}_{2}}{ndf_{2}} = %s",
+				utils::toString(expFunction_min -> GetChisquare() / expFunction_min ->GetNDF(), 2).c_str());
+		expStatistics -> AddText(buf);
+	}
 
-	delete g_ein;
+	double gamma[2] = {gamma_min, gamma_max};
+	double gamma_error[2] = {gamma_min_error, gamma_max_error};
+	double gamma_mean_error;
+	double rms;
+	double gamma_mean = utils::weightedMean(gamma,gamma_error,2,gamma_mean_error,rms);
+
+	snprintf(buf, sizeof(buf), "#bar{#gamma} = (%s)#frac{1}{s}",
+			utils::printNumber(gamma_mean,gamma_mean_error).c_str());
+	expStatistics -> AddText(buf);
+	expStatistics -> Draw();
+	printf("fitting done\n");
+
+	delete g_max;
 	delete s;
 	delete [] dest;
 	delete [] source;

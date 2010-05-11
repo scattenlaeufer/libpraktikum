@@ -65,7 +65,7 @@ double utils::weightedMean(const double* numbers, const double* errors, const un
 	double weightSum;
 	for (unsigned int i = 0; i < length; i++) {
 		sum += numbers[i] * weights[i];
-		weightSum += errors[i];
+		weightSum += weights[i];
 	}
 	double mean = sum / weightSum;
 

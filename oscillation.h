@@ -40,6 +40,8 @@ class Oscillation : DataAnalysis {
 
 		void draw(double x_1,double x_2);
 
+		void drawOs();
+
 		void drawOscillation();
 
 		void drawFrequency();
