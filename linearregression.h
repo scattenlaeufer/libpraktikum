@@ -81,6 +81,12 @@ class LinearRegression {
 			residualsGraph->GetYaxis()->SetTitle(title.c_str());
 		}
 
+		/** Set the name of the fit parameter
+		 * \param[in] p0 name of y-intercept
+		 * \param[in] p1 name of slope
+		 */
+		void setParName(const string &p0, const string &p1);
+
 		/** Set the units in the statistics box
  		 * \param[in] n y-intercept
 		 * \param[in] m slope
@@ -117,6 +123,12 @@ class LinearRegression {
 		bool hasErrors;
 		bool residualsVisible;
 		bool pullsVisible;
+		bool hasUnits;
+
+		string par0;
+		string par1;
+		string unit_m;
+		string unit_n;
 };
 
 

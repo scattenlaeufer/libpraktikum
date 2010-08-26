@@ -17,9 +17,21 @@
 #include <TMath.h>
 
 
+/** \class Oscillation
+ * \brief Analysis of harmonic oscillations
+ *
+ */
+
 class Oscillation : DataAnalysis {
 	public:
 
+		/** Creates an oscillation object with errors.
+		 * \param[in] *_x Pointer to the array of x-values
+		 * \param[in] *_y Pointer to the array of y-values
+		 * \param[in] *_xErrors Pointer to the array of x-errors
+		 * \param[in] *_yErrors Pointer to the array of y-errors
+		 * \param[in] _length Length of the arrays
+		 */
 		inline Oscillation(const double *_x, const double *_y, const double *_xErrors, const double *_yErrors, const unsigned int _length)
 			: DataAnalysis(_x, _y, _xErrors, _yErrors, _length)
 		{
@@ -27,6 +39,11 @@ class Oscillation : DataAnalysis {
 			init();
 		}
 
+		/** Creates an oscillation object without errors.
+		 * \param[in] *_x Pointer to the array of x-values
+		 * \param[in] *_y Pointer to the array of y-values
+		 * \param[in] _length Length of the arrays
+		 */
 		inline Oscillation(const double *_x, const double *_y, const unsigned int _length)
 			: DataAnalysis(_x, _y, _length)
 		{
@@ -34,16 +51,33 @@ class Oscillation : DataAnalysis {
 			init();
 		}
 
+		/** Shuold in some time perform a fast fourier tranformation, but at the moment peformce 
+		 * a fourier transformation with 10000 itterations as default.
+		 */
 		void runFFT();
 
+		/** Starts the analysis of the given data. 
+		 * Sets oscillationVisible and frequencyVisible to true and peformce drawOscillation() 
+		 * and drawFrequency().
+		 */
 		void draw();
 
+		/** Performce draw() with predifined borders of the fft
+		 * \param[in] x_1 lower border for fft
+		 * \param[in] x_2 upper border for fft
+		 */
 		void draw(double x_1,double x_2);
 
+		/** Draws only the oscillationPad.
+		 */
 		void drawOs();
 
+		/** Does alot of magic. Especialy creating and filling of the osillationPad.
+		 */
 		void drawOscillation();
 
+		/** Does alot of magic. Especialy creating and filling of the frequencyPad.
+		 */
 		void drawFrequency();
 
 		inline TPad *getOscillationPad() const {
@@ -70,7 +104,8 @@ class Oscillation : DataAnalysis {
 		inline TPaveText *getExpStats() const {
 			return expStatistics;
 		}
-
+		/** Enables the fitting of an envalope to a dampd harmonic oscillation
+		 */
 		inline void enableFitting() {
 			doFit = true;
 		}
@@ -91,12 +126,12 @@ class Oscillation : DataAnalysis {
 		bool frequencyVisible;
 		bool doFit;
 
-		/// the x values of the frequency spectrum
+		// the x values of the frequency spectrum
 		double *xFreq;
-		/// the y values of the frequency spectrum, i.e. the amplitude
+		// the y values of the frequency spectrum, i.e. the amplitude
 		double *yFreq;
 		unsigned int iterations;
-		/// borders for fourier
+		// borders for fourier
 		double x_low;
 		double x_high;
 

@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
 	}
 
 	LinearRegression *linear = new LinearRegression(x, y, NULL, ye, n);
+	linear -> setUnits("irgenwas","was anderes");
+	linear -> setParName("bla","foo");
 	if (linear);
 //}}}
 /*

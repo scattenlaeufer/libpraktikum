@@ -129,45 +129,49 @@ void Oscillation::runFFT() {
 	*/
 }
 
+
+
 int Oscillation::fourier(int n_datasets, const double* data_t, const double* data_a, int n_f, double f_min, double f_max, double* f_out, double* amp_out, bool progress){
 
-			//calculate distance between two values of frequency
-			double df=((double)(f_max-f_min))/((double)(n_f-1));
+	//calculate distance between two values of frequency
+	double df=((double)(f_max-f_min))/((double)(n_f-1));
 
-			double sumsin=0;
-			double sumcos=0;
-			double omega=0;
+	double sumsin=0;
+	double sumcos=0;
+	double omega=0;
 
-			//calculate amplitudes for the requested values of frequency
-			for(int i=0; i < n_f; i++){
-				sumsin=0;
-				sumcos=0;
+	//calculate amplitudes for the requested values of frequency
+	for(int i=0; i < n_f; i++){
+		sumsin=0;
+		sumcos=0;
 
-				//calculate the currently used frequency
-				f_out[i]=f_min+(i*df);
+		//calculate the currently used frequency
+		f_out[i]=f_min+(i*df);
 
-				//calculate omega once
-				omega=f_out[i]*2*TMath::Pi();
+		//calculate omega once
+		omega=f_out[i]*2*TMath::Pi();
 
-				//Do the magic ...
-				for(int j=0; j< n_datasets; j++)
-				{
-					sumcos +=data_a[j]*cos(omega*data_t[j]);
-				}
-				for(int j=0; j< n_datasets; j++)
-				{
-					sumsin +=data_a[j]*sin(omega*data_t[j]);
-				}
-				amp_out[i]= sqrt(pow(sumcos,2)+pow(sumsin,2));
-				//... magic done
-
-				//Debugoutput, calculations may take a while, so you can see the progress
-				if((progress==true) && (i % 32 ==0)) 
-					cout <<f_out[i] << " " << amp_out[i]<< endl;
-			}
-
-			return 0;
+		//Do the magic ...
+		for(int j=0; j< n_datasets; j++)
+		{
+			sumcos +=data_a[j]*cos(omega*data_t[j]);
 		}
+		for(int j=0; j< n_datasets; j++)
+		{
+			sumsin +=data_a[j]*sin(omega*data_t[j]);
+		}
+		amp_out[i]= sqrt(pow(sumcos,2)+pow(sumsin,2));
+		//... magic done
+
+		//Debugoutput, calculations may take a while, so you can see the progress
+		if((progress==true) && (i % 32 ==0)) 
+			cout <<f_out[i] << " " << amp_out[i]<< endl;
+	}
+
+	return 0;
+}
+
+
 
 double Oscillation::peakfinderSchwerpunkt(double * x, double * y, int n_datasets, double &sigm_peak, int start, double val){
 	int i0=start; //index or left border of relevant section of peak

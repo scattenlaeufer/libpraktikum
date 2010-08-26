@@ -13,6 +13,10 @@ LinearRegression::LinearRegression(const double *_x, const double *_y, const dou
 	linearPad->Draw();
 	linearPad->cd();
 
+	par0 = "m";
+	par1 = "n";
+	hasUnits = false;
+
 	// Create the graph of the datapoints
 	if (xErrors != NULL || yErrors != NULL) {
 		hasErrors = true;
@@ -146,17 +150,32 @@ void LinearRegression::hidePulls() {
 	pullsVisible = false;
 }
 
+void LinearRegression::setParName(const string &p0, const string &p1){
+	par0 = p0;
+	par1 = p1;
+
+	//TODO combine setParName and setUnits
+	
+	if (hasUnits)
+		setUnits(unit_n, unit_m);
+	else
+		drawStats();
+}
+
 void LinearRegression::setUnits(const string &n, const string &m) {
 	delete linearStatistics;
+	hasUnits = true;
+	unit_m = m;
+	unit_n = n;
 	linearPad->cd();
 	linearStatistics = new TPaveText(0.7, 0.7, 1, 1, "NDC" );
 	char buf[64];
 
-	snprintf(buf, sizeof(buf), "m = (%s) %s",
-			utils::printNumber(linearFunction->GetParameter(1), linearFunction->GetParError(1)).c_str(), m.c_str());
+	snprintf(buf, sizeof(buf), "%s = (%s) %s",
+			par1.c_str(), utils::printNumber(linearFunction->GetParameter(1), linearFunction->GetParError(1)).c_str(), m.c_str());
 	linearStatistics->AddText(buf);
-	snprintf(buf, sizeof(buf), "n = (%s) %s",
-			utils::printNumber(linearFunction->GetParameter(0), linearFunction->GetParError(0)).c_str(), n.c_str());
+	snprintf(buf, sizeof(buf), "%s = (%s) %s",
+			par0.c_str(), utils::printNumber(linearFunction->GetParameter(0), linearFunction->GetParError(0)).c_str(), n.c_str());
 	linearStatistics->AddText(buf);
 	if (hasErrors) {
 		sprintf(buf, "#frac{#chi^{2}}{ndf} = %s",
@@ -172,11 +191,11 @@ TPaveText *LinearRegression::drawStats() const {
 	TPaveText *paveText= new TPaveText(0.7, 0.7, 1, 1, "NDC" );
 	char buf[64];
 
-	snprintf(buf, sizeof(buf), "m = %s",
-			utils::printNumber(linearFunction->GetParameter(1), linearFunction->GetParError(1)).c_str());
+	snprintf(buf, sizeof(buf), "%s = %s",
+			par1.c_str(), utils::printNumber(linearFunction->GetParameter(1), linearFunction->GetParError(1)).c_str());
 	paveText->AddText(buf);
-	snprintf(buf, sizeof(buf), "n = %s",
-			utils::printNumber(linearFunction->GetParameter(0), linearFunction->GetParError(0)).c_str());
+	snprintf(buf, sizeof(buf), "%s = %s",
+			par0.c_str(), utils::printNumber(linearFunction->GetParameter(0), linearFunction->GetParError(0)).c_str());
 	paveText->AddText(buf);
 	if (hasErrors) {
 		sprintf(buf, "#frac{#chi^{2}}{ndf} = %s",
